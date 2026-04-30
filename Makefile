@@ -1,7 +1,7 @@
-.PHONY: help build up down logs shell test clean db-only backend-only frontend-only
+.PHONY: help build up down logs shell clean backend-only dev-backend dev-frontend install db-connect
 
 help:
-	@echo "DocumentDB Bookings - Development Commands"
+	@echo "MongoDB Atlas Bookings - Development Commands"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make build          - Build Docker containers"
@@ -10,11 +10,9 @@ help:
 	@echo "  make logs           - View all container logs"
 	@echo "  make logs-backend   - View backend logs"
 	@echo "  make logs-frontend  - View frontend logs"
-	@echo "  make logs-db        - View DocumentDB logs"
 	@echo "  make shell          - Open a shell in the backend container"
-	@echo "  make db-connect     - Connect to DocumentDB with mongosh"
-	@echo "  make db-only        - Start only DocumentDB"
-	@echo "  make backend-only   - Start only backend + DocumentDB"
+	@echo "  make db-connect     - Connect to MongoDB using MONGODB_CONNECTION_STRING"
+	@echo "  make backend-only   - Start only backend"
 	@echo "  make clean          - Clean up containers and volumes"
 	@echo ""
 	@echo "Development (without Docker):"
@@ -31,7 +29,7 @@ up:
 	@echo "✅ Services started!"
 	@echo "   - Frontend:    http://localhost:3000"
 	@echo "   - Backend API: http://localhost:8000/docs"
-	@echo "   - DocumentDB:  mongodb://admin:password123@localhost:10260"
+	@echo "   - Database:    Set MONGODB_CONNECTION_STRING for Atlas connectivity"
 	@echo ""
 
 down:
@@ -46,27 +44,24 @@ logs-backend:
 logs-frontend:
 	docker-compose logs -f frontend
 
-logs-db:
-	docker-compose logs -f documentdb
-
 shell:
 	docker-compose exec backend /bin/bash
 
 db-connect:
-	mongosh "mongodb://admin:password123@localhost:10260/?tls=true&tlsAllowInvalidCertificates=true"
-
-db-only:
-	docker-compose up -d documentdb
-	@echo "✅ DocumentDB started on port 10260"
+	@if [[ -z "$$MONGODB_CONNECTION_STRING" ]]; then \
+		echo "MONGODB_CONNECTION_STRING is not set"; \
+		exit 1; \
+	fi
+	mongosh "$$MONGODB_CONNECTION_STRING"
 
 backend-only:
-	docker-compose up -d documentdb backend
-	@echo "✅ Backend + DocumentDB started"
+	docker-compose up -d backend
+	@echo "✅ Backend started"
 	@echo "   - Backend API: http://localhost:8000/docs"
 
 clean:
 	docker-compose down -v
-	@echo "✅ Containers and volumes removed"
+	@echo "✅ Containers removed"
 
 # Development commands (run locally without Docker)
 dev-backend:

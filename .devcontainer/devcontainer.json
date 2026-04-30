@@ -27,7 +27,7 @@
         "ms-python.vscode-pylance",
         "ms-python.black-formatter",
         "ms-toolsai.jupyter",
-        "ms-azuretools.vscode-documentdb",
+        "mongodb.mongodb-vscode",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode"
       ],
@@ -43,7 +43,7 @@
     }
   },
 
-  "forwardPorts": [3000, 8000, 10260],
+  "forwardPorts": [3000, 8000],
   "portsAttributes": {
     "3000": {
       "label": "Frontend (React)",
@@ -55,11 +55,6 @@
       "onAutoForward": "notify",
       "visibility": "public"
     },
-    "10260": {
-      "label": "DocumentDB",
-      "onAutoForward": "silent",
-      "visibility": "public"
-    }
   },
 
   "postCreateCommand": "bash .devcontainer/post-create-command.sh",

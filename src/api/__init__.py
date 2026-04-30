@@ -6,7 +6,7 @@ AI-powered booking search backend for the DocumentDB workshop.
 
 Modules:
 - config: Environment configuration and settings
-- database: DocumentDB connection and data access
+- database: MongoDB connection and data access
 - models: Pydantic models for requests/responses
 - search: Vector and text search functionality
 - chat: RAG-powered chat responses
@@ -20,23 +20,23 @@ Usage:
 
 __all__ = [
     # Config
-    'settings',
+    "settings",
     # Database
-    'db',
-    'initialize_database',
-    'get_database_status',
+    "db",
+    "initialize_database",
+    "get_database_status",
     # Models
-    'Listing',
-    'SearchRequest',
-    'SearchResponse',
-    'ChatRequest',
-    'ChatResponse',
+    "Listing",
+    "SearchRequest",
+    "SearchResponse",
+    "ChatRequest",
+    "ChatResponse",
     # Search
-    'search_listings',
-    'get_search_capabilities',
+    "search_listings",
+    "get_search_capabilities",
     # Chat
-    'generate_chat_response',
+    "generate_chat_response",
     # Agents
-    'run_agent_query',
-    'is_multi_agent_available',
+    "run_agent_query",
+    "is_multi_agent_available",
 ]

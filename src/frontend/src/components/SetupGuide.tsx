@@ -65,8 +65,12 @@ export const SetupGuide: React.FC<SetupGuideProps> = ({ isVisible, onDismiss }) 
               <code>exercises/Module-00.md</code>
             </li>
             <li>
-              <strong>Start DocumentDB:</strong>
-              <code>docker run -dt -p 10260:10260 --name documentdb-container documentdb --username admin --password password123</code>
+              <strong>Configure MongoDB Atlas:</strong>
+              <code>Set MONGODB_CONNECTION_STRING in .env</code>
+            </li>
+            <li>
+              <strong>Configure Azure OpenAI:</strong>
+              <code>Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, and deployment names</code>
             </li>
             <li>
               <strong>Start the backend:</strong>
@@ -79,7 +83,7 @@ export const SetupGuide: React.FC<SetupGuideProps> = ({ isVisible, onDismiss }) 
           <span className="demo-badge">Demo Mode Active</span>
           <p>
             You can explore the UI with sample data while completing the setup.
-            Real AI-powered search will work once the backend is connected.
+            Real AI-powered search will work once Atlas and Azure OpenAI are connected.
           </p>
         </div>
 

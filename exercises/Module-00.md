@@ -3,10 +3,11 @@
 ## 🎯 Learning Objectives
 
 By the end of this module, you will:
+
 - ✅ Have a working Codespaces environment
 - ✅ Understand the project structure and architecture
 - ✅ Configure your OpenAI API key
-- ✅ Verify DocumentDB connection
+- ✅ Verify MongoDB Atlas connection
 - ✅ Understand the dataset you'll be working with
 
 ---
@@ -14,6 +15,7 @@ By the end of this module, you will:
 ## 📋 Prerequisites Checklist
 
 Before starting, ensure you have:
+
 - GitHub account
 - OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
 - Codespace created from this repository
@@ -35,16 +37,16 @@ This workshop is designed to run entirely in **GitHub Codespaces**, providing a 
    - Click the green **"Code"** button
    - Select the **"Codespaces"** tab
    - Click **"Create codespace on workshop"**
-   
+
    Alternatively, click this badge:
-   
+
    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/documentdb/booking-agents-sample/tree/workshop)
 
 3. **Wait for the environment to build** (first launch takes 2-3 minutes):
    - Python 3.11 environment
    - Node.js 20
    - Docker-in-Docker
-   - VS Code extensions (DocumentDB, Python, Docker)
+   - VS Code extensions (MongoDB, Python, Docker)
    - All dependencies automatically installed
 
 4. **Verify Codespace is ready**:
@@ -56,80 +58,60 @@ This workshop is designed to run entirely in **GitHub Codespaces**, providing a 
 
 ---
 
-## Step 2: Set Up DocumentDB Container
+## Step 2: Set Up MongoDB Atlas Connection
 
-Now that your environment is ready, let's deploy DocumentDB locally using Docker.
+You'll connect your application to an external MongoDB Atlas cluster.
 
-### Deploy DocumentDB Container
+### Create MongoDB Atlas Cluster
 
-1. **Pull the DocumentDB Docker image**:
-   ```bash
-   docker pull ghcr.io/documentdb/documentdb/documentdb-local:latest
-   ```
+1. **Go to MongoDB Atlas**:
+   - Visit [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Sign up or log in with your account
 
-2. **Tag the image for convenience**:
-   ```bash
-   docker tag ghcr.io/documentdb/documentdb/documentdb-local:latest documentdb
-   ```
+2. **Create a new project and cluster**:
+   - Click "Create a Project"
+   - Click "Create a Deployment"
+   - Choose M0 (free tier) or your preferred tier
+   - Select your region
+   - Complete the setup
 
-3. **Run the DocumentDB container**:
-   ```bash
-   docker run -dt -p 10260:10260 --name documentdb-container documentdb --username admin --password password123
-   ```
+3. **Whitelist Your IP Address**:
+   - In the Atlas dashboard, go to "Network Access"
+   - Click "Add IP Address"
+   - For development, you can select "Allow Access from Anywhere" (or add your Codespace IP)
 
-### Change Port Visibilities
+4. **Create a Database User**:
+   - Go to "Database Access"
+   - Click "Create a Database User"
+   - Save the username and password
 
-The forwarded ports in Codespaces default to **Private**, which can block connections between services. You need to make them **Public** so the frontend, backend, and DocumentDB can communicate.
+5. **Get Your Connection String**:
+   - Click the "Connect" button on your cluster
+   - Select "Connect your application"
+   - Copy the connection string (looks like `mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority`)
 
-1. **Open the Ports panel**:
-   - In the terminal area at the bottom of VS Code, click the **"Ports"** tab (next to Terminal, Output, etc.)
+### Connect to MongoDB Atlas with VS Code Extension
 
-2. **Update port visibility**:
-   - You should see port **10260** (DocumentDB) listed
-   - Right-click on the port row
-   - Select **"Port Visibility"** → **"Public"**
-   - Repeat for ports **3000** (frontend) and **8000** (backend) if they are listed
+You can use the MongoDB for VS Code extension to explore your cluster:
 
-> 💡 **Why Public?** In Codespaces, private ports require authentication tokens that automated service-to-service connections don't provide. Setting ports to Public allows the services to reach each other.
+1. **Install MongoDB for VS Code**:
+   - Go to the Extensions sidebar
+   - Search for "MongoDB for VS Code"
+   - Click Install
 
-4. **Verify the container is running**:
-   ```bash
-   docker ps
-   ```
-   
-   You should see `documentdb-container` running on port 10260.
-   
-   Expected output:
-   ```
-   CONTAINER ID   IMAGE        COMMAND                  CREATED         STATUS         PORTS                      NAMES
-   abc123def456   documentdb   "./entrypoint.sh --u…"   10 seconds ago  Up 9 seconds   0.0.0.0:10260->10260/tcp   documentdb-container
-   ```
+2. **Add a connection**:
+   - Click the MongoDB icon in the sidebar
+   - Click "Add Connection"
+   - Paste your connection string
+   - Click "Connect"
 
-### Connect to DocumentDB with VS Code Extension
-
-Download the 'DocumentDB for VS Code' extension on your codespace using the VS Code Marketplace. Afterwards, follow these steps to connect your DocumentDB container to the extension:
-
-1. **Open the DocumentDB extension**:
-   - Click the DocumentDB icon in the left sidebar (database icon)
-   - Or press `Ctrl+Shift+P` and type "DocumentDB"
-
-2. **Add a new connection**:
-   - Click the DocumentDB icon in the VS Code sidebar
-   - Click "Add New Connection"
-   - Select "Connection String"
-   - Paste the connection string:
-     ```
-     mongodb://admin:password123@localhost:10260/?tls=true&tlsAllowInvalidCertificates=true&authMechanism=SCRAM-SHA-256
-     ```
-   - Verify using username and password. The credentials should already be prefilled using the connection string.
-
-4. **Verify the connection** - You should see your connection in the DocumentDB explorer
+3. **Verify the connection** - You should see your cluster in the MongoDB explorer
 
 ---
 
-## Step 3: Load Sample Data into DocumentDB
+## Step 3: Load Sample Data into MongoDB Atlas
 
-Now that DocumentDB is running and connected, let's load sample data to work with throughout the workshop. You'll use the DocumentDB VS Code extension to import JSON files directly into your database.
+Now that you have a MongoDB Atlas cluster, let's load sample data for the workshop.
 
 ### Understanding the Sample Data
 
@@ -137,12 +119,11 @@ The workshop includes a JSON file with sample data that already contains vector 
 
 - `data/embedded_data.json` - Combined Airbnb listings with pre-generated embeddings
 
-### Load Data Using DocumentDB Extension
+### Load Data Using MongoDB for VS Code Extension
 
-1. **Open the DocumentDB extension**:
-   - Click the DocumentDB icon in the left sidebar
+1. **Open the MongoDB extension**:
+   - Click the MongoDB icon in the left sidebar
    - Expand your connection to see databases
-   - **Note:** Feel free to delete the database "sampledb" from the extension if you see it.
 
 2. **Create the database and collections**:
    - Right-click on your connection
@@ -150,48 +131,52 @@ The workshop includes a JSON file with sample data that already contains vector 
    - Enter database name: `db`
    - Press Enter
 
-3. **Create the customers collection**:
+3. **Create the listings collection**:
    - Expand the `db` database
    - Right-click on the database
    - Select **"Create Collection"**
    - Enter collection name: `listings`
    - Press Enter
 
-4. **Import customer data**:
+4. **Import data**:
    - Right-click on the `listings` collection
    - Select **"Import Documents"**
    - Navigate to: `data/embedded_data.json`
    - Click **"Open"**
    - Wait for the import confirmation message
 
-
-
 ---
 
-## 🔑 Step 3: Configure OpenAI API Key
+## 🔑 Step 4: Configure Azure OpenAI Credentials
 
-You need an OpenAI API key to generate embeddings and use chat completions.
+You need Azure OpenAI credentials to generate embeddings and use chat completions.
 
 1. Create a `.env` file in the project root if it isn't created already:
+
    ```bash
    cp .env.example .env
    ```
 
-2. Edit `.env` and add your key:
+2. Edit `.env` and add your Azure OpenAI credentials:
+
    ```env
-   OPENAI_API_KEY=sk-your-actual-key-here
+   MONGODB_CONNECTION_STRING=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
+   AZURE_OPENAI_ENDPOINT=https://<resource-name>.openai.azure.com/
+   AZURE_OPENAI_API_KEY=your-azure-api-key-here
+   AZURE_OPENAI_API_VERSION=2024-10-21
+   AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
+   AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4o-mini
    ```
 
 3. Save the file
 
-### Verify Your API Key
+### Verify Your Credentials
 
 Run this Python snippet to test:
 
 ```bash
-python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('✅ API key configured' if os.getenv('OPENAI_API_KEY') else '❌ API key missing')"
+python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('✅ MongoDB configured' if os.getenv('MONGODB_CONNECTION_STRING') else '❌ MongoDB missing'); print('✅ Azure OpenAI configured' if os.getenv('AZURE_OPENAI_API_KEY') else '❌ Azure OpenAI missing')"
 ```
-
 
 ---
 
@@ -200,8 +185,8 @@ python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('✅ 
 Before moving to Module 1, verify:
 
 - [ ] ✅ Codespace is running without errors
-- [ ] ✅ OpenAI API key is configured
-- [ ] ✅ DocumentDB connection works
+- [ ] ✅ Azure OpenAI credentials are configured
+- [ ] ✅ MongoDB Atlas connection works
 - [ ] ✅ You understand the project structure
 - [ ] ✅ You've explored the dataset
 - [ ] ✅ You understand the architecture
@@ -211,21 +196,25 @@ Before moving to Module 1, verify:
 ## 🎓 Concepts to Remember
 
 ### Vector Search
+
 - Converts text to numerical vectors (embeddings)
 - Finds similar items by comparing vector distances
 - Enables semantic search ("find me something cozy" vs exact keyword match)
 
-### DocumentDB cosmosSearch
+### MongoDB Atlas Vector Search
+
 - Native vector search operator
 - Supports IVF (Inverted File Index) and HNSW algorithms
 - Allows combining vector similarity with other filters
 
 ### RAG (Retrieval-Augmented Generation)
+
 - Retrieves relevant documents from a database
 - Augments LLM prompts with retrieved context
 - Generates accurate, grounded responses
 
 ### Multi-Agent Systems
+
 - Multiple specialized AI agents working together
 - Each agent has a specific role/expertise
 - Agents coordinate to solve complex tasks
@@ -235,25 +224,29 @@ Before moving to Module 1, verify:
 ## 🐛 Troubleshooting
 
 ### Codespace won't start
+
 - Wait a few minutes (initial build takes 2-3 min)
 - Check GitHub status page
 - Try rebuilding: Codespaces menu → Rebuild Container
 
-### DocumentDB not connecting
-```bash
-# Check if DocumentDB container is running
-docker ps | grep documentdb
+### MongoDB Atlas not connecting
 
-# Check logs
-docker logs documentdb
+```bash
+# Verify .env file has correct connection string
+grep MONGODB_CONNECTION_STRING .env
+
+# Test connection using mongosh
+mongosh "your-connection-string"
 ```
 
-### OpenAI API errors
-- Verify your API key is correct
-- Check you have credits in your OpenAI account
-- Make sure the key has permission to use embeddings and chat APIs
+### Azure OpenAI API errors
+
+- Verify your API key and endpoint are correct in `.env`
+- Check your Azure OpenAI account has available quota
+- Make sure the key has permission to use embeddings and chat deployments
 
 ### Import errors
+
 ```bash
 # Reinstall dependencies
 pip install -r requirements.txt

@@ -1,8 +1,8 @@
-# Building AI-Powered Search Applications with DocumentDB and OpenAI
+# Building AI-Powered Search Applications with MongoDB Atlas and Azure OpenAI
 
 **Create an Intelligent Airbnb Search Platform with Vector Search and Multi-Agent AI**
 
-Welcome to this hands-on workshop where you'll build a production-ready AI-powered search application using DocumentDB's vector search capabilities, OpenAI embeddings, and multi-agent orchestration with LangGraph. Through progressive modules, you'll master semantic search, RAG patterns, and agent-based architectures.
+Welcome to this hands-on workshop where you'll build a production-ready AI-powered search application using MongoDB Atlas's vector search capabilities, Azure OpenAI embeddings, and multi-agent orchestration with LangGraph. Through progressive modules, you'll master semantic search, RAG patterns, and agent-based architectures.
 
 ---
 
@@ -12,12 +12,12 @@ The workshop follows a progressive learning path. Each module builds on the prev
 
 ### 📚 Module Overview
 
-| Module | Title | Duration | Level | Key Topics |
-|--------|-------|----------|-------|------------|
-| [**0**](Module-00.md) | Setup & Environment | 5-10 min | Beginner | Environment verification, API keys, project structure |
-| [**1**](Module-01.md) | Vector Search Fundamentals | 20-25 min | Intermediate | Embeddings, vector indexes, semantic search |
-| [**2**](Module-02.md) | RAG Pattern Implementation | 20-25 min | Intermediate | LangChain, retrievers, conversation memory |
-| [**3**](Module-03.md) | Multi-Agent System with LangGraph | 25-30 min | Advanced | Agent orchestration, state management, workflows |
+| Module                | Title                             | Duration  | Level        | Key Topics                                            |
+| --------------------- | --------------------------------- | --------- | ------------ | ----------------------------------------------------- |
+| [**0**](Module-00.md) | Setup & Environment               | 5-10 min  | Beginner     | Environment verification, API keys, project structure |
+| [**1**](Module-01.md) | Vector Search Fundamentals        | 20-25 min | Intermediate | Embeddings, vector indexes, semantic search           |
+| [**2**](Module-02.md) | RAG Pattern Implementation        | 20-25 min | Intermediate | LangChain, retrievers, conversation memory            |
+| [**3**](Module-03.md) | Multi-Agent System with LangGraph | 25-30 min | Advanced     | Agent orchestration, state management, workflows      |
 
 ### 🎯 Recommended Path
 
@@ -56,8 +56,8 @@ The workshop follows a progressive learning path. Each module builds on the prev
 
 By the end of this workshop, you'll have created:
 
-- **Intelligent Search System** using DocumentDB's native vector search (cosmosSearch)
-- **Semantic Search with OpenAI** embeddings for natural language queries
+- **Intelligent Search System** using MongoDB Atlas's native vector search (HNSW)
+- **Semantic Search with Azure OpenAI** embeddings for natural language queries
 - **RAG (Retrieval-Augmented Generation)** pipeline with context-aware responses
 - **Multi-Agent Platform** with specialized agents using LangGraph:
   - Search Agent for finding listings
@@ -69,8 +69,8 @@ By the end of this workshop, you'll have created:
 
 ## Technologies Covered
 
-- **DocumentDB** - MongoDB-compatible database with vector search (IVF/HNSW)
-- **OpenAI** - Embeddings (text-embedding-3-small) and Chat (GPT-3.5/4)
+- **MongoDB Atlas** - MongoDB with native vector search (HNSW)
+- **Azure OpenAI** - Embeddings (text-embedding-3-small) and Chat (GPT-4o-mini)
 - **LangChain** - RAG patterns and prompt engineering
 - **LangGraph** - Multi-agent orchestration and workflows
 - **FastAPI** - Modern Python web framework
@@ -97,32 +97,36 @@ By the end of this workshop, you'll have created:
 ## Prerequisites
 
 ### Technical Skills
+
 - **Programming**: Intermediate Python knowledge
 - **Concepts**: Basic understanding of REST APIs and databases
 - **Optional**: Familiarity with async/await patterns
 
 ### Required Setup
-✅ **GitHub Codespaces** (pre-configured, includes DocumentDB)  
-✅ **OpenAI API Key** ([Get one here](https://platform.openai.com/api-keys))  
+
+✅ **GitHub Codespaces** (pre-configured with all dependencies)  
+✅ **Azure OpenAI API Key and Endpoint** (Azure AI Foundry deployment)  
 ✅ **Data**: Already included in the `data/` folder
 
 ### Pre-installed in Codespaces
+
 - Python 3.11 + dependencies
 - Node.js 18 + frontend dependencies
-- DocumentDB running on port 10260
-- DocumentDB VS Code extension
-- All required libraries (FastAPI, LangChain, OpenAI, etc.)
+- MongoDB VS Code extension
+- All required libraries (FastAPI, LangChain, Azure OpenAI, etc.)
 
 ---
 
 ## Dataset
 
 The workshop uses real Airbnb listing data from **Denver, Colorado**:
+
 - Diverse property types (apartments, houses, condos, guesthouses)
 - Neighborhoods across the Denver metro area
 - Price range from budget to luxury
 
 Each listing includes:
+
 - Description and neighborhood overview
 - Amenities and property details (bedrooms, beds, bathrooms)
 - Geospatial coordinates (latitude/longitude)
@@ -142,10 +146,11 @@ Each listing includes:
 **Objective**: Verify your development environment and understand the project structure
 
 **Topics**:
-- ✅ Environment verification (Python, Node.js, DocumentDB)
-- ✅ API key configuration (OpenAI)
+
+- ✅ Environment verification (Python, Node.js)
+- ✅ API key configuration (Azure OpenAI)
 - ✅ Project structure walkthrough
-- ✅ DocumentDB connection testing
+- ✅ MongoDB Atlas connection testing
 - ✅ Dataset overview and exploration
 
 **Deliverable**: Fully configured environment ready for development
@@ -157,14 +162,16 @@ Each listing includes:
 **Objective**: Build semantic search capabilities using vector embeddings
 
 **Topics**:
+
 - 📊 Understanding vector embeddings and similarity
 - 🤖 Generate embeddings with OpenAI text-embedding-3-small
-- 🗄️ Create DocumentDB vector indexes (IVF algorithm)
-- 🔎 Implement semantic search with cosmosSearch operator
+- 🗄️ Create MongoDB Atlas vector indexes (HNSW algorithm)
+- 🔎 Implement semantic search with MongoDB Atlas $vectorSearch operator
 - 🎯 Combine vector search with filters (price, location, amenities)
 - 📈 Understand similarity scoring and ranking
 
 **Challenges**:
+
 1. Add price range filters (Easy)
 2. Implement property type filtering (Easy)
 3. Add geospatial radius search (Advanced)
@@ -179,14 +186,16 @@ Each listing includes:
 **Objective**: Build conversational AI with Retrieval-Augmented Generation
 
 **Topics**:
+
 - 🧩 Understanding the RAG pattern
-- 🔗 Build custom LangChain retrievers for DocumentDB
+- 🔗 Build custom LangChain retrievers for MongoDB Atlas
 - ✍️ Design context-aware prompts with ChatPromptTemplate
 - 💭 Implement conversation memory for multi-turn dialogues
 - 🔄 Query rephrasing for better retrieval
 - 📦 Structure responses for frontend integration
 
 **Challenges**:
+
 1. Add sentiment analysis for tone adjustment (Medium)
 2. Extract filters automatically from queries (Hard)
 3. Include source citations in responses (Medium)
@@ -201,6 +210,7 @@ Each listing includes:
 **Objective**: Create a sophisticated multi-agent system with specialized agents
 
 **Topics**:
+
 - 🏗️ Multi-agent architecture design
 - 🎭 Build specialized agents (Filter, Search, Recommendation, Supervisor)
 - 🔀 Agent orchestration with LangGraph StateGraph
@@ -210,6 +220,7 @@ Each listing includes:
 - ⚠️ Error handling and clarification patterns
 
 **Challenges**:
+
 1. Add a Clarification Agent for vague queries (Medium)
 2. Add Error Handling Agent for empty results (Medium)
 3. Add a Booking Agent for reservations (Hard)
@@ -243,8 +254,8 @@ Each listing includes:
         └────────────┼───────────────┘
                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│                   DocumentDB                            │
-│  • Vector Search (cosmosSearch with IVF)               │
+│                   MongoDB Atlas                         │
+│  • Vector Search (MongoDB Atlas with HNSW)            │
 │  • Geospatial Indexes (2dsphere)                       │
 │  • Full-text Search                                     │
 └─────────────────────────────────────────────────────────┘
@@ -282,30 +293,33 @@ See the main [README.md](../README.md) for local setup instructions.
 ## Workshop Tips
 
 ### 💡 Best Practices
+
 - Read each module completely before starting
 - Test your code frequently
 - Use the completed branch as reference (but try on your own first!)
 - Ask questions during instructor-led sessions
 
 ### 🐛 Debugging
+
 - Check the terminal for error messages
 - Use `print()` statements liberally
-- Review the DocumentDB extension in VS Code
+- Review the MongoDB for VS Code extension
 - Verify your OpenAI API key is set correctly
 
 ### ⚡ Time Management
 
 **Total Workshop Time**: 1-1.5 hours
 
-| Activity | Time | Notes |
-|----------|------|-------|
-| Module 0 (Setup) | 5-10 min | Can be done pre-workshop |
+| Activity                 | Time      | Notes                    |
+| ------------------------ | --------- | ------------------------ |
+| Module 0 (Setup)         | 5-10 min  | Can be done pre-workshop |
 | Module 1 (Vector Search) | 20-25 min | Includes hands-on coding |
-| Module 2 (RAG) | 20-25 min | Includes hands-on coding |
-| Module 3 (Multi-Agent) | 25-30 min | Advanced concepts |
-| Q&A / Troubleshooting | 10-15 min | Throughout workshop |
+| Module 2 (RAG)           | 20-25 min | Includes hands-on coding |
+| Module 3 (Multi-Agent)   | 25-30 min | Advanced concepts        |
+| Q&A / Troubleshooting    | 10-15 min | Throughout workshop      |
 
 **Pacing Tips**:
+
 - Complete Module 0 before the workshop starts
 - Focus on understanding concepts, not rushing
 - Challenges are optional (do them after if time is tight)
@@ -316,19 +330,22 @@ See the main [README.md](../README.md) for local setup instructions.
 By the end of this workshop, you should be able to:
 
 **Technical Skills**:
+
 - ✅ Generate and use vector embeddings for semantic search
-- ✅ Create and query DocumentDB vector indexes
+- ✅ Create and query MongoDB Atlas vector indexes
 - ✅ Build RAG pipelines with LangChain
 - ✅ Design and orchestrate multi-agent systems with LangGraph
 - ✅ Manage conversation state and memory
 
 **Practical Abilities**:
+
 - ✅ Search for listings using natural language queries
 - ✅ Get contextually relevant, personalized recommendations
 - ✅ Handle multi-turn conversations with context awareness
 - ✅ Understand how specialized agents collaborate
 
 **Conceptual Understanding**:
+
 - ✅ Know when to use vector search vs traditional search
 - ✅ Understand RAG pattern benefits and limitations
 - ✅ Design multi-agent architectures for complex workflows
@@ -344,18 +361,15 @@ If you're done with the workshop, you can clean up resources:
 # Stop the Codespace (automatically happens after inactivity)
 # Or delete it from: https://github.com/codespaces
 
-# For local development:
-docker stop documentdb-container
-docker rm documentdb-container
-docker rmi documentdb
+# MongoDB Atlas is external - no local cleanup needed
 ```
 
 ---
 
 ## Resources
 
-- [DocumentDB Documentation](https://documentdb.io/docs)
-- [DocumentDB Vector Search](https://github.com/documentdb/documentdb)
+- [MongoDB Atlas Vector Search Documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/)
+- [Azure OpenAI Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
 - [OpenAI API Reference](https://platform.openai.com/docs)
 - [LangChain Documentation](https://python.langchain.com/)
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
@@ -367,19 +381,21 @@ docker rmi documentdb
 
 - **During Workshop**: Ask your instructor
 - **Issues**: [GitHub Issues](https://github.com/documentdb/booking-agents-sample/issues)
-- **Community**: [DocumentDB Discord](https://discord.gg/vH7bYu524D)
+- **Community**: [MongoDB Community](https://community.mongodb.com/)
 
 ---
 
 ## Quick Navigation
 
 ### 📖 Start Learning
+
 - **New to the workshop?** → [Module 0: Setup & Environment](Module-00.md)
 - **Environment ready?** → [Module 1: Vector Search Fundamentals](Module-01.md)
 - **Know vector search?** → [Module 2: RAG Pattern Implementation](Module-02.md)
 - **Experienced with RAG?** → [Module 3: Multi-Agent System with LangGraph](Module-03.md)
 
 ### 🔗 Quick Links
+
 - [Main README](../README.md) - Project overview
 - [Requirements](../requirements.txt) - Python dependencies
 - [Devcontainer Config](../.devcontainer/devcontainer.json) - Codespaces setup

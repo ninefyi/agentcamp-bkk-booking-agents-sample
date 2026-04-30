@@ -1,11 +1,13 @@
 # Module 3: Multi-Agent System with LangGraph
 
 ### You'll be editing: [`src/api/agents.py`](../src/api/agents.py)
+
 ### Solution: [`solutions/agents_solution.py`](../solutions/agents_solution.py) — check here if you get stuck
 
 ## Learning Objectives
 
 By the end of this module, you will:
+
 - Understand how a multi-agent system routes and processes queries
 - Implement filter and ranking logic for agent tools
 - Add LLM-powered routing, filter extraction, and response generation
@@ -17,12 +19,12 @@ The multi-agent scaffold in `agents.py` already works — it searches, recommend
 
 ### Before vs. After
 
-| Behavior | Before (placeholder) | After (your code) |
-|----------|---------------------|-------------------|
-| Routing | Always routes to search | LLM decides: search vs. respond |
-| Filtering | No filters applied | LLM extracts price, bedrooms, amenities from query |
-| Ranking | Returns first 5 results | Ranks by budget, quality, or balanced preference |
-| Response | Raw listing dump | Friendly conversational answer |
+| Behavior  | Before (placeholder)    | After (your code)                                  |
+| --------- | ----------------------- | -------------------------------------------------- |
+| Routing   | Always routes to search | LLM decides: search vs. respond                    |
+| Filtering | No filters applied      | LLM extracts price, bedrooms, amenities from query |
+| Ranking   | Returns first 5 results | Ranks by budget, quality, or balanced preference   |
+| Response  | Raw listing dump        | Friendly conversational answer                     |
 
 ### Example Multi-Agent Conversation (after all exercises):
 
@@ -58,6 +60,7 @@ Both are well under your $200 budget. Interested in booking?"
 ### What are Multi-Agent Systems?
 
 A multi-agent system uses multiple specialized AI agents that:
+
 - Each handle specific tasks they're optimized for
 - Communicate and coordinate through shared state
 - Work together to solve complex problems
@@ -84,12 +87,12 @@ A multi-agent system uses multiple specialized AI agents that:
 
 ### LangGraph Key Concepts
 
-| Concept | Description |
-|---------|-------------|
-| **StateGraph** | A directed graph where nodes are functions and edges define transitions |
-| **State (TypedDict)** | A shared dictionary passed between all nodes |
-| **Nodes** | Async functions that take state, do work, and return updated fields |
-| **Edges** | Transitions between nodes — can be direct or conditional |
+| Concept               | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| **StateGraph**        | A directed graph where nodes are functions and edges define transitions |
+| **State (TypedDict)** | A shared dictionary passed between all nodes                            |
+| **Nodes**             | Async functions that take state, do work, and return updated fields     |
+| **Edges**             | Transitions between nodes — can be direct or conditional                |
 
 ---
 
@@ -106,6 +109,7 @@ curl http://localhost:8000/health | python -m json.tool
 ```
 
 Look for `"multi_agent": true`. If it's `false`, restart the backend:
+
 ```bash
 pkill -f uvicorn
 cd /workspaces/booking-agents-sample && uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
@@ -120,6 +124,7 @@ curl -s -X POST http://localhost:8000/query_message \
 ```
 
 You should see:
+
 - `"multi_agent": true` — the agent graph is running
 - `"search_results"` — listings returned (unfiltered, unranked)
 - `"message"` — a raw listing dump (not conversational yet)
@@ -130,19 +135,19 @@ This is the **baseline**. Each exercise you complete will improve the output.
 
 Open [`src/api/agents.py`](../src/api/agents.py) and note the structure:
 
-| Section | Status | What it does |
-|---------|--------|-------------|
-| `AgentState` | Provided | Shared state definition with 7 fields |
-| `apply_filters` | **Exercise 1a** | TODO: add filter conditions |
-| `get_recommendations` | **Exercise 1b** | TODO: add ranking strategies |
-| `create_llm()` | Provided | Creates the ChatOpenAI instance |
-| `supervisor_node` | **Exercise 2a** | TODO: replace hardcoded routing with LLM |
-| `search_node` | Provided | Finds listings via vector search |
-| `filter_node` | **Exercise 2b** | TODO: replace hardcoded `{}` with LLM filter extraction |
-| `recommend_node` | **Exercise 3a** | TODO: replace hardcoded "balanced" with LLM preference detection |
-| `respond_node` | **Exercise 3b** | TODO: replace raw listing dump with LLM response |
-| `build_agent_graph()` | Provided | Wires nodes into the LangGraph pipeline |
-| `run_agent_query()` | Provided | Public interface called by the API |
+| Section               | Status          | What it does                                                     |
+| --------------------- | --------------- | ---------------------------------------------------------------- |
+| `AgentState`          | Provided        | Shared state definition with 7 fields                            |
+| `apply_filters`       | **Exercise 1a** | TODO: add filter conditions                                      |
+| `get_recommendations` | **Exercise 1b** | TODO: add ranking strategies                                     |
+| `create_llm()`        | Provided        | Creates an Azure OpenAI chat client                              |
+| `supervisor_node`     | **Exercise 2a** | TODO: replace hardcoded routing with LLM                         |
+| `search_node`         | Provided        | Finds listings via MongoDB Atlas vector search                   |
+| `filter_node`         | **Exercise 2b** | TODO: replace hardcoded `{}` with LLM filter extraction          |
+| `recommend_node`      | **Exercise 3a** | TODO: replace hardcoded "balanced" with LLM preference detection |
+| `respond_node`        | **Exercise 3b** | TODO: replace raw listing dump with LLM response                 |
+| `build_agent_graph()` | Provided        | Wires nodes into the LangGraph pipeline                          |
+| `run_agent_query()`   | Provided        | Public interface called by the API                               |
 
 ---
 
@@ -156,12 +161,12 @@ The function receives a list of listings and optional filter parameters. Current
 
 **For each parameter that is not `None`, remove non-matching listings:**
 
-| Parameter | Condition |
-|-----------|-----------|
-| `max_price` | Keep where `price <= max_price` |
+| Parameter       | Condition                                                         |
+| --------------- | ----------------------------------------------------------------- |
+| `max_price`     | Keep where `price <= max_price`                                   |
 | `property_type` | Keep where `property_type` contains the string (case-insensitive) |
-| `min_bedrooms` | Keep where `bedrooms >= min_bedrooms` |
-| `amenities` | Keep where ALL required amenities are present (case-insensitive) |
+| `min_bedrooms`  | Keep where `bedrooms >= min_bedrooms`                             |
+| `amenities`     | Keep where ALL required amenities are present (case-insensitive)  |
 
 <details>
 <summary>Solution</summary>
@@ -189,10 +194,10 @@ The function receives a list of listings and optional filter parameters. Current
 
 The function receives listings and a preference string. Currently it returns the first 5. Add ranking strategies.
 
-| Preference | Strategy |
-|-----------|----------|
-| `"budget"` | Sort by price ascending, return top 5 |
-| `"quality"` | Sort by score descending, return top 5 |
+| Preference   | Strategy                                                        |
+| ------------ | --------------------------------------------------------------- |
+| `"budget"`   | Sort by price ascending, return top 5                           |
+| `"quality"`  | Sort by score descending, return top 5                          |
 | `"balanced"` | Rank = `score - (price / 500.0)`, sort descending, return top 5 |
 
 <details>
@@ -236,6 +241,7 @@ Check the `search_results` — the listings should now be sorted by the "balance
 Currently the supervisor always routes to `"search"`. Replace with an LLM call that decides between `"search"` and `"respond"`.
 
 **Steps:**
+
 1. Call `create_llm()` to get an LLM instance
 2. Build a system prompt explaining the two routing options
 3. Send `[SystemMessage(prompt), HumanMessage(state['user_query'])]` with `await llm.ainvoke(messages)`
@@ -278,6 +284,7 @@ Respond with ONLY one word: search or respond"""
 Currently the filter node uses `filters = {}` (no filters). Replace with an LLM call that extracts constraints from the query as JSON.
 
 **Steps:**
+
 1. Call `create_llm()`
 2. Build a system prompt asking the LLM to extract filter criteria as JSON:
    - `max_price` (number), `property_type` (string), `min_bedrooms` (integer), `amenities` (array)
@@ -333,21 +340,25 @@ When in doubt, respond with: {}"""
 ### Test Exercise 2
 
 **Test routing:**
+
 ```bash
 # Should route to "respond" (no search needed)
 curl -s -X POST http://localhost:8000/query_message \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello, what can you help me with?", "session_id": "ex2a"}' | python -m json.tool
 ```
+
 Check `agent_path` — it should show `["respond"]` instead of `["search"]`.
 
 **Test filter extraction:**
+
 ```bash
 # Should extract filters and narrow results
 curl -s -X POST http://localhost:8000/query_message \
   -H "Content-Type: application/json" \
   -d '{"message": "2 bedroom place under $150 with wifi", "session_id": "ex2b"}' | python -m json.tool
 ```
+
 Check the `search_results` count — it should be less than 5 (filtered down from 20). All returned listings should have 2+ bedrooms, price ≤ $150, and wifi. Before this exercise, all 5 results passed through unfiltered.
 
 ```bash
@@ -356,6 +367,7 @@ curl -s -X POST http://localhost:8000/query_message \
   -H "Content-Type: application/json" \
   -d '{"message": "Show me places in Denver", "session_id": "ex2c"}' | python -m json.tool
 ```
+
 Check that `search_results` has 5 results (no filtering applied). This verifies the LLM doesn't over-extract filters from general search terms.
 
 ---
@@ -369,6 +381,7 @@ Check that `search_results` has 5 results (no filtering applied). This verifies 
 Currently uses `preference = "balanced"`. Replace with an LLM call that detects the user's ranking preference.
 
 **Steps:**
+
 1. Call `create_llm()`
 2. Build a system prompt asking the LLM to determine the user's preference — respond with ONLY one word: `"budget"`, `"quality"`, or `"balanced"`
 3. Send the prompt with `await llm.ainvoke(messages)`
@@ -410,6 +423,7 @@ Query: {query}"""
 Currently returns a raw listing dump. Replace with an LLM call that generates a friendly, conversational response.
 
 **Steps:**
+
 1. Call `create_llm()`
 2. Build a system prompt telling the LLM to be a friendly booking assistant. Include `listings_context` as the available search results. Ask it to mention 2-3 top options and keep under 200 words.
 3. Send `[SystemMessage(prompt), HumanMessage(state['user_query'])]` with `await llm.ainvoke(messages)`
@@ -471,13 +485,13 @@ Open http://localhost:3000 and test the full system in the chat panel:
 
 ### What to check for
 
-| Working | Possible Issue |
-|---------|---------------|
-| Response mentions specific listings by name | Check Exercise 3b — is the LLM prompt correct? |
-| Filter constraints applied (fewer results) | Check Exercise 2b — is JSON parsing working? |
-| Budget queries return cheapest first | Check Exercise 3a — is preference detection working? |
-| "Hello" gets a direct response (no search) | Check Exercise 2a — is supervisor routing to "respond"? |
-| Listings appear on the map | Check that `search_results` is non-empty in the API response |
+| Working                                     | Possible Issue                                               |
+| ------------------------------------------- | ------------------------------------------------------------ |
+| Response mentions specific listings by name | Check Exercise 3b — is the LLM prompt correct?               |
+| Filter constraints applied (fewer results)  | Check Exercise 2b — is JSON parsing working?                 |
+| Budget queries return cheapest first        | Check Exercise 3a — is preference detection working?         |
+| "Hello" gets a direct response (no search)  | Check Exercise 2a — is supervisor routing to "respond"?      |
+| Listings appear on the map                  | Check that `search_results` is non-empty in the API response |
 
 ---
 
@@ -498,6 +512,7 @@ Open http://localhost:3000 and test the full system in the chat panel:
 Create an agent that detects vague queries and asks clarifying questions before searching.
 
 **Requirements:**
+
 - Use the LLM to determine if a query is too vague (missing location, budget, size)
 - If vague, generate 2-3 clarifying questions and set as `final_response`
 - If detailed enough, route to the search pipeline
@@ -509,6 +524,7 @@ Add a new `clarification_node` and wire it into `build_agent_graph()` between su
 Create an agent that handles the case when search returns zero results.
 
 **Requirements:**
+
 - Check if `search_results` is empty after the search agent runs
 - Suggest ways to broaden the search (different area, higher budget, fewer bedrooms)
 - Set a helpful `final_response`
@@ -518,6 +534,7 @@ Create an agent that handles the case when search returns zero results.
 Create an agent that handles booking intent (e.g., "I'll take the first one").
 
 **Requirements:**
+
 - Detect booking intent from the query
 - Generate a booking summary with listing details
 - Provide next steps (how to reserve, payment, cancellation policy)
@@ -552,7 +569,7 @@ Before completing the workshop, ensure you have:
 
 Congratulations! You've built a sophisticated AI-powered application with:
 
-- **Vector Search** (Module 1) — Semantic search with DocumentDB cosmosSearch
+- **Vector Search** (Module 1) — Semantic search with MongoDB Atlas vector search
 - **RAG Pattern** (Module 2) — Context-aware AI responses with LangChain
 - **Multi-Agent System** (Module 3) — Specialized agents orchestrated with LangGraph
 

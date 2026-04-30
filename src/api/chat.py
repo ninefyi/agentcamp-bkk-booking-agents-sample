@@ -18,7 +18,7 @@ import logging
 from typing import List, Dict, Optional
 from collections import defaultdict
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from .config import settings
@@ -46,8 +46,10 @@ logger = logging.getLogger(__name__)
 #     if empty.
 #   - clear(): reset the messages list
 
+
 class ChatHistory:
     """In-memory chat history manager per session."""
+
     pass  # TODO: Replace with your implementation
 
 
@@ -97,13 +99,23 @@ FALLBACK_RESPONSE = ""  # TODO: Write your fallback message
 # LangChain LLM Setup (provided — no changes needed)
 # =============================================================================
 
-def get_llm() -> Optional[ChatOpenAI]:
-    """Get LangChain LLM if OpenAI is configured."""
+
+def get_llm() -> Optional[object]:
+    """Get LangChain LLM if an AI provider is configured."""
     if not settings.has_openai_key:
-        logger.warning("OpenAI API key not configured - chat will use fallback")
+        logger.warning("AI provider not configured - chat will use fallback")
         return None
-    
+
     try:
+        if settings.has_azure_openai:
+            return AzureChatOpenAI(
+                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                api_key=settings.AZURE_OPENAI_API_KEY,
+                api_version=settings.AZURE_OPENAI_API_VERSION,
+                azure_deployment=settings.AZURE_OPENAI_CHAT_DEPLOYMENT,
+                temperature=0.7,
+            )
+
         return ChatOpenAI(
             model=settings.OPENAI_CHAT_MODEL,
             api_key=settings.OPENAI_API_KEY,
@@ -138,6 +150,7 @@ def get_llm() -> Optional[ChatOpenAI]:
 #
 # Return "No listings available matching the search criteria." if empty.
 
+
 def format_listings_for_context(results: List[SearchResult]) -> str:
     """Format search results as context for the LLM."""
     pass  # TODO: Replace with your implementation
@@ -147,12 +160,12 @@ def format_listings_simple(results: List[SearchResult]) -> str:
     """Simple format for fallback responses (provided — no changes needed)."""
     if not results:
         return "No listings found."
-    
+
     lines = []
     for i, result in enumerate(results[:3], 1):
         listing = result.listing
         lines.append(f"{i}. {listing.name} - ${listing.price:.0f}/night")
-    
+
     return "\n".join(lines)
 
 
@@ -178,21 +191,19 @@ def format_listings_simple(results: List[SearchResult]) -> str:
 #
 # Important: Use ainvoke() for async LangChain calls.
 
-async def generate_chat_response(
-    message: str,
-    session_id: str = "default"
-) -> str:
+
+async def generate_chat_response(message: str, session_id: str = "default") -> str:
     """
     Generate a chat response using RAG pattern.
-    
+
     Args:
         message: User's message
         session_id: Session ID for conversation tracking
-    
+
     Returns:
         AI-generated response string
     """
     # Import here to avoid circular imports
     from .search import search_listings
-    
+
     pass  # TODO: Replace with your implementation

@@ -1,4 +1,4 @@
-# DocumentDB Bookings - Frontend
+# Atlas Bookings - Frontend
 
 A React-based frontend for the AI-Powered Booking Search Workshop. This application provides a progressive experience that works **from day 0** and gets better as you complete each workshop module.
 
@@ -6,17 +6,18 @@ A React-based frontend for the AI-Powered Booking Search Workshop. This applicat
 
 ### Progressive Experience
 
-| Stage | Backend State | Frontend Behavior |
-|-------|---------------|-------------------|
-| **Pre-Setup** | Nothing running | Demo mode with sample listings + setup guide |
-| **Post Module 0** | DocumentDB running | Map + listings display |
-| **Post Module 1** | Vector search works | Basic semantic search |
-| **Post Module 2** | RAG chat works | Full conversational AI chat |
-| **Post Module 3** | Multi-agent works | Advanced AI with agent routing |
+| Stage             | Backend State       | Frontend Behavior                            |
+| ----------------- | ------------------- | -------------------------------------------- |
+| **Pre-Setup**     | Nothing running     | Demo mode with sample listings + setup guide |
+| **Post Module 0** | MongoDB connected   | Map + listings display                       |
+| **Post Module 1** | Vector search works | Basic semantic search                        |
+| **Post Module 2** | RAG chat works      | Full conversational AI chat                  |
+| **Post Module 3** | Multi-agent works   | Advanced AI with agent routing               |
 
 ### Demo Mode
 
 When the backend isn't connected, the frontend automatically:
+
 - Shows a **Setup Guide** with instructions
 - Loads **sample listings** from embedded data
 - Provides **basic text search** functionality
@@ -39,12 +40,12 @@ npm start
 
 ### Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Run development server on http://localhost:3000 |
-| `npm run build` | Build for production |
-| `npm test` | Run tests |
-| `npm run copy-data` | Copy embedded_data.json to public folder |
+| Command             | Description                                     |
+| ------------------- | ----------------------------------------------- |
+| `npm start`         | Run development server on http://localhost:3000 |
+| `npm run build`     | Build for production                            |
+| `npm test`          | Run tests                                       |
+| `npm run copy-data` | Copy embedded_data.json to public folder        |
 
 ## Architecture
 
@@ -75,8 +76,8 @@ src/
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable            | Description     | Default                 |
+| ------------------- | --------------- | ----------------------- |
 | `REACT_APP_API_URL` | Backend API URL | `http://localhost:8000` |
 
 ## How It Works

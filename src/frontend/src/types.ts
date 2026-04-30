@@ -1,4 +1,4 @@
-// Core types for the DocumentDB Bookings application
+// Core types for the Atlas Bookings application
 
 export interface Listing {
   id: number;
@@ -52,7 +52,7 @@ export interface BackendStatus {
 
 export type WorkshopStage = 
   | 'pre-setup'      // Nothing running
-  | 'module-0'       // DocumentDB running, data loaded
+  | 'module-0'       // MongoDB connected, data loaded
   | 'module-1'       // Vector search works
   | 'module-2'       // RAG chat works
   | 'module-3';      // Multi-agent works

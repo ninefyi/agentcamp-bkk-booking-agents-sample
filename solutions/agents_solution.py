@@ -40,9 +40,15 @@ logger = logging.getLogger(__name__)
 # Check if LangGraph is available
 try:
     from langgraph.graph import StateGraph, END
-    from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
+    from langchain_core.messages import (
+        BaseMessage,
+        HumanMessage,
+        AIMessage,
+        SystemMessage,
+    )
     from langchain_core.tools import tool
-    from langchain_openai import ChatOpenAI
+    from langchain_openai import AzureChatOpenAI
+
     LANGGRAPH_AVAILABLE = True
 except ImportError:
     LANGGRAPH_AVAILABLE = False
@@ -53,8 +59,10 @@ except ImportError:
 # Agent State Definition
 # ============================================================================
 
+
 class AgentState(TypedDict):
     """Shared state passed between agents in the graph."""
+
     messages: Annotated[List[BaseMessage], operator.add]
     user_query: str
     search_results: List[Dict[str, Any]]
@@ -68,13 +76,14 @@ class AgentState(TypedDict):
 # Agent Tools
 # ============================================================================
 
+
 @tool
 def apply_filters(
     listings: List[Dict[str, Any]],
     max_price: Optional[float] = None,
     property_type: Optional[str] = None,
     min_bedrooms: Optional[int] = None,
-    amenities: Optional[List[str]] = None
+    amenities: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Apply filters to a list of listings.
@@ -92,18 +101,24 @@ def apply_filters(
     filtered = listings.copy()
 
     if max_price is not None:
-        filtered = [l for l in filtered if l.get('price', float('inf')) <= max_price]
+        filtered = [l for l in filtered if l.get("price", float("inf")) <= max_price]
 
     if property_type:
-        filtered = [l for l in filtered if property_type.lower() in l.get('property_type', '').lower()]
+        filtered = [
+            l
+            for l in filtered
+            if property_type.lower() in l.get("property_type", "").lower()
+        ]
 
     if min_bedrooms is not None:
-        filtered = [l for l in filtered if (l.get('bedrooms') or 0) >= min_bedrooms]
+        filtered = [l for l in filtered if (l.get("bedrooms") or 0) >= min_bedrooms]
 
     if amenities:
+
         def has_amenities(listing):
-            listing_amenities = [a.lower() for a in listing.get('amenities', [])]
+            listing_amenities = [a.lower() for a in listing.get("amenities", [])]
             return all(a.lower() in listing_amenities for a in amenities)
+
         filtered = [l for l in filtered if has_amenities(l)]
 
     return filtered
@@ -111,8 +126,7 @@ def apply_filters(
 
 @tool
 def get_recommendations(
-    listings: List[Dict[str, Any]],
-    preference: str = "balanced"
+    listings: List[Dict[str, Any]], preference: str = "balanced"
 ) -> List[Dict[str, Any]]:
     """
     Get personalized recommendations from listings.
@@ -129,17 +143,18 @@ def get_recommendations(
 
     if preference == "budget":
         # Sort by price, lowest first
-        return sorted(listings, key=lambda x: x.get('price', float('inf')))[:5]
+        return sorted(listings, key=lambda x: x.get("price", float("inf")))[:5]
     elif preference == "quality":
         # Sort by search relevance score, highest first
-        return sorted(listings, key=lambda x: x.get('score', 0), reverse=True)[:5]
+        return sorted(listings, key=lambda x: x.get("score", 0), reverse=True)[:5]
     else:
         # Balanced: combine relevance score and price
         def rank(l):
-            relevance = l.get('score', 0.5)
-            price = l.get('price', 100)
+            relevance = l.get("score", 0.5)
+            price = l.get("price", 100)
             # Normalize: higher is better
             return relevance - (price / 500.0)
+
         return sorted(listings, key=rank, reverse=True)[:5]
 
 
@@ -147,11 +162,12 @@ def get_recommendations(
 # LLM Setup
 # ============================================================================
 
+
 def create_llm():
     """Create the LLM for agent use."""
-    return ChatOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        model=settings.OPENAI_CHAT_MODEL,
+    return AzureChatOpenAI(
+        deployment_name=settings.AZURE_OPENAI_CHAT_DEPLOYMENT,
+        api_version=settings.AZURE_OPENAI_API_VERSION,
         temperature=0.7,
     )
 
@@ -159,6 +175,7 @@ def create_llm():
 # ============================================================================
 # Agent Nodes
 # ============================================================================
+
 
 async def supervisor_node(state: AgentState) -> dict:
     """
@@ -183,19 +200,19 @@ Respond with ONLY one word: search or respond"""
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(content=state['user_query'])
+        HumanMessage(content=state["user_query"]),
     ]
 
     response = await llm.ainvoke(messages)
     next_agent = response.content.strip().lower()
 
     # Validate response — default to search for any listing-related query
-    if next_agent not in ('search', 'respond'):
-        next_agent = 'search'
+    if next_agent not in ("search", "respond"):
+        next_agent = "search"
 
     return {
-        'next_agent': next_agent,
-        'messages': [AIMessage(content=f"Routing to: {next_agent}")]
+        "next_agent": next_agent,
+        "messages": [AIMessage(content=f"Routing to: {next_agent}")],
     }
 
 
@@ -206,21 +223,18 @@ async def search_node(state: AgentState) -> dict:
     try:
         from .search import search_listings
 
-        results = search_listings(state['user_query'], limit=20)
-        search_results = [
-            {**r.listing.model_dump(), 'score': r.score}
-            for r in results
-        ]
+        results = search_listings(state["user_query"], limit=20)
+        search_results = [{**r.listing.model_dump(), "score": r.score} for r in results]
         return {
-            'search_results': search_results,
-            'messages': [AIMessage(content=f"Found {len(results)} listings")]
+            "search_results": search_results,
+            "messages": [AIMessage(content=f"Found {len(results)} listings")],
         }
 
     except Exception as e:
         logger.error(f"Search agent error: {e}")
         return {
-            'search_results': [],
-            'messages': [AIMessage(content=f"Search error: {str(e)}")]
+            "search_results": [],
+            "messages": [AIMessage(content=f"Search error: {str(e)}")],
         }
 
 
@@ -255,7 +269,7 @@ When in doubt, respond with: {}"""
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(content=state['user_query'])
+        HumanMessage(content=state["user_query"]),
     ]
 
     try:
@@ -264,26 +278,27 @@ When in doubt, respond with: {}"""
 
         # Apply filters (no-op if filters is empty)
         if filters:
-            filtered = apply_filters.invoke({
-                'listings': state['search_results'],
-                **filters
-            })
+            filtered = apply_filters.invoke(
+                {"listings": state["search_results"], **filters}
+            )
             return {
-                'filters': filters,
-                'search_results': filtered,
-                'messages': [AIMessage(content=f"Applied filters, {len(filtered)} results remain")]
+                "filters": filters,
+                "search_results": filtered,
+                "messages": [
+                    AIMessage(
+                        content=f"Applied filters, {len(filtered)} results remain"
+                    )
+                ],
             }
         else:
             return {
-                'filters': {},
-                'messages': [AIMessage(content="No filters to apply")]
+                "filters": {},
+                "messages": [AIMessage(content="No filters to apply")],
             }
 
     except Exception as e:
         logger.error(f"Filter agent error: {e}")
-        return {
-            'messages': [AIMessage(content=f"Filter error: {str(e)}")]
-        }
+        return {"messages": [AIMessage(content=f"Filter error: {str(e)}")]}
 
 
 async def recommend_node(state: AgentState) -> dict:
@@ -303,30 +318,33 @@ Respond with ONLY one word:
 Query: {query}"""
 
     messages = [
-        SystemMessage(content=system_prompt.format(query=state['user_query'])),
+        SystemMessage(content=system_prompt.format(query=state["user_query"])),
     ]
 
     try:
         response = await llm.ainvoke(messages)
         preference = response.content.strip().lower()
-        if preference not in ['budget', 'quality', 'balanced']:
-            preference = 'balanced'
+        if preference not in ["budget", "quality", "balanced"]:
+            preference = "balanced"
 
-        recs = get_recommendations.invoke({
-            'listings': state['search_results'],
-            'preference': preference
-        })
+        recs = get_recommendations.invoke(
+            {"listings": state["search_results"], "preference": preference}
+        )
         return {
-            'recommendations': recs,
-            'messages': [AIMessage(content=f"Generated {len(recs)} recommendations ({preference})")]
+            "recommendations": recs,
+            "messages": [
+                AIMessage(
+                    content=f"Generated {len(recs)} recommendations ({preference})"
+                )
+            ],
         }
 
     except Exception as e:
         logger.error(f"Recommendation agent error: {e}")
         # Fall back to top results
         return {
-            'recommendations': state['search_results'][:5],
-            'messages': [AIMessage(content="Fallback recommendations")]
+            "recommendations": state["search_results"][:5],
+            "messages": [AIMessage(content="Fallback recommendations")],
         }
 
 
@@ -337,19 +355,21 @@ async def respond_node(state: AgentState) -> dict:
     llm = create_llm()
 
     # Format listings for context
-    recs = state.get('recommendations', []) or state.get('search_results', [])[:5]
+    recs = state.get("recommendations", []) or state.get("search_results", [])[:5]
 
     if not recs:
         return {
-            'final_response': "I couldn't find any listings matching your criteria. Try broadening your search!"
+            "final_response": "I couldn't find any listings matching your criteria. Try broadening your search!"
         }
 
-    listings_context = "\n".join([
-        f"- {r.get('name', 'Unknown')}: {r.get('description', '')[:100]}... "
-        f"(Type: {r.get('property_type', 'N/A')}, Bedrooms: {r.get('bedrooms', 'N/A')}, "
-        f"Price: ${r.get('price', 'N/A')}/night)"
-        for r in recs[:5]
-    ])
+    listings_context = "\n".join(
+        [
+            f"- {r.get('name', 'Unknown')}: {r.get('description', '')[:100]}... "
+            f"(Type: {r.get('property_type', 'N/A')}, Bedrooms: {r.get('bedrooms', 'N/A')}, "
+            f"Price: ${r.get('price', 'N/A')}/night)"
+            for r in recs[:5]
+        ]
+    )
 
     system_prompt = """You are a helpful booking assistant. Based on the search results below,
 provide a friendly, concise response to the user's query. Mention 2-3 top options with brief highlights.
@@ -361,20 +381,21 @@ Keep your response conversational and under 200 words."""
 
     messages = [
         SystemMessage(content=system_prompt.format(listings=listings_context)),
-        HumanMessage(content=state['user_query'])
+        HumanMessage(content=state["user_query"]),
     ]
 
     try:
         response = await llm.ainvoke(messages)
-        return {'final_response': response.content}
+        return {"final_response": response.content}
     except Exception as e:
         logger.error(f"Response agent error: {e}")
-        return {'final_response': f"Here are some options I found:\n{listings_context}"}
+        return {"final_response": f"Here are some options I found:\n{listings_context}"}
 
 
 # ============================================================================
 # Graph Builder
 # ============================================================================
+
 
 def build_agent_graph():
     """
@@ -404,7 +425,7 @@ def build_agent_graph():
 
     # Define routing logic
     def route_from_supervisor(state: AgentState) -> str:
-        return state.get('next_agent', 'search')
+        return state.get("next_agent", "search")
 
     # Set entry point and conditional routing
     workflow.set_entry_point("supervisor")
@@ -415,7 +436,7 @@ def build_agent_graph():
         {
             "search": "search",
             "respond": "respond",
-        }
+        },
     )
 
     # Linear pipeline: search → filter → recommend → respond → END
@@ -430,6 +451,7 @@ def build_agent_graph():
 # ============================================================================
 # Public Interface
 # ============================================================================
+
 
 def get_agent_graph():
     """
@@ -459,12 +481,13 @@ async def run_agent_query(query: str, session_id: str = "default") -> Dict[str, 
     if graph is None:
         # Fallback to simple RAG
         from .chat import generate_chat_response
+
         response = await generate_chat_response(query, session_id)
         return {
             "response": response,
             "agent_path": ["fallback_rag"],
             "search_results": [],
-            "multi_agent": False
+            "multi_agent": False,
         }
 
     try:
@@ -476,7 +499,7 @@ async def run_agent_query(query: str, session_id: str = "default") -> Dict[str, 
             "filters": {},
             "recommendations": [],
             "next_agent": "",
-            "final_response": ""
+            "final_response": "",
         }
 
         # Run the graph
@@ -485,39 +508,37 @@ async def run_agent_query(query: str, session_id: str = "default") -> Dict[str, 
         # Extract agent path from messages
         agent_path = [
             msg.content.replace("Routing to: ", "")
-            for msg in final_state['messages']
+            for msg in final_state["messages"]
             if isinstance(msg, AIMessage) and msg.content.startswith("Routing to:")
         ]
 
         # Format results with score separated from listing data
-        results = final_state.get('recommendations', [])[:10]
+        results = final_state.get("recommendations", [])[:10]
         search_results = []
         for r in results:
             result_copy = r.copy()
-            score = result_copy.pop('score', 1.0)
-            search_results.append({
-                'listing': result_copy,
-                'score': score
-            })
+            score = result_copy.pop("score", 1.0)
+            search_results.append({"listing": result_copy, "score": score})
 
         return {
-            "response": final_state['final_response'],
+            "response": final_state["final_response"],
             "agent_path": agent_path,
             "search_results": search_results,
-            "multi_agent": True
+            "multi_agent": True,
         }
 
     except Exception as e:
         logger.error(f"Agent graph error: {e}")
         # Fallback
         from .chat import generate_chat_response
+
         response = await generate_chat_response(query, session_id)
         return {
             "response": response,
             "agent_path": ["error_fallback"],
             "search_results": [],
             "multi_agent": False,
-            "error": str(e)
+            "error": str(e),
         }
 
 

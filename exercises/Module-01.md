@@ -1,16 +1,18 @@
 # Module 1: Vector Search Fundamentals
 
 ### 📓 Jupyter Notebooks:
+
 - **[generate-embeddings.ipynb](../notebooks/generate-embeddings.ipynb)** - Learn how embeddings work (Steps 1-5, optional)
 - **[vector-search.ipynb](../notebooks/vector-search.ipynb)** - Implement vector search (Steps 6+, start here if short on time)
 
 ## 📋 Learning Objectives
 
 By the end of this module, you will:
+
 - Understand what vector embeddings are and how they enable semantic search
 - Load and prepare data for vector search
-- Generate embeddings using OpenAI's text-embedding model
-- Create vector search indexes in DocumentDB
+- Generate embeddings using Azure OpenAI's text-embedding model
+- Create vector search indexes in MongoDB Atlas
 - Implement semantic search with similarity scoring
 - Apply filters to refine search results
 
@@ -19,6 +21,7 @@ By the end of this module, you will:
 You'll implement a semantic search system that allows users to search for Airbnb listings using natural language. Instead of exact keyword matching, your search will understand the meaning and context of queries.
 
 ### Examples of Semantic Search:
+
 - "cozy place near downtown with parking" → finds listings matching the vibe, not just keywords
 - "family-friendly home with backyard" → understands intent and returns relevant results
 - "quiet retreat for remote work" → captures context and lifestyle needs
@@ -26,11 +29,13 @@ You'll implement a semantic search system that allows users to search for Airbnb
 ## 📚 Concept: Vector Embeddings
 
 **What are embeddings?**
+
 - Numerical representations of text that capture semantic meaning
-- Each embedding is a list of numbers (vector) - typically 1536 dimensions for OpenAI's text-embedding-3-small
+- Each embedding is a list of numbers (vector) - typically 1536 dimensions for Azure OpenAI's text-embedding-3-small
 - Similar concepts have similar vectors, even if they use different words
 
 **Example:**
+
 ```
 "beach house" → [0.23, -0.45, 0.12, ..., 0.67]  (1536 numbers)
 "oceanfront property" → [0.21, -0.43, 0.15, ..., 0.69]  (similar vector!)
@@ -38,6 +43,7 @@ You'll implement a semantic search system that allows users to search for Airbnb
 ```
 
 **How Vector Search Works:**
+
 1. Convert text (listings, queries) into embeddings
 2. Store embeddings in a database with vector search capabilities
 3. When searching, convert the query to an embedding
@@ -52,18 +58,18 @@ You'll implement a semantic search system that allows users to search for Airbnb
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  1. Load Data          2. Generate         3. Store & Index    │
-│  ┌─────────┐           ┌──────────┐        ┌────────────────┐  │
-│  │ JSON    │           │ OpenAI   │        │  DocumentDB    │  │
-│  │ File    │─────────▶│ Embedding│───────▶│  + Vector      │  │
-│  │         │           │ API      │        │    Index       │  │
-│  │         │           │(1536-dim)│        │  (cosmosSearch)│  │
-│  └─────────┘           └──────────┘        └────────────────┘  │
+│  ┌─────────┐           ┌──────────────┐    ┌────────────────┐  │
+│  │ JSON    │           │ Azure OpenAI │    │ MongoDB Atlas  │  │
+│  │ File    │─────────▶│ Embedding    │───▶│ + Vector       │  │
+│  │         │           │ API          │    │ Search Index   │  │
+│  │         │           │ (1536-dim)   │    │($vectorSearch) │  │
+│  └─────────┘           └──────────────┘    └────────────────┘  │
 │                                                     │           │
 │                                                     │           │
 │  4. Search Query                                    ▼           │
 │  ┌─────────────┐          ┌──────────┐     ┌────────────────┐ │
 │  │ "cozy place"│─────────▶│ Convert  │────▶│ Vector Search  │ │
-│  │ "near beach"│          │ to Vector│     │ (cosmosSearch) │ │
+│  │ "near beach"│          │ to Vector│     │($vectorSearch) │ │
 │  └─────────────┘          └──────────┘     └────────────────┘ │
 │                                                     │           │
 │                                                     ▼           │
@@ -76,7 +82,7 @@ You'll implement a semantic search system that allows users to search for Airbnb
 
 ## 🛠️ Steps 1-5: Understanding Embeddings (Demonstration)
 
-> **⏭️ Skip Ahead?** Steps 1-5 are a **learning demonstration** to help you understand how embeddings work. They do **not** modify the application or database. If you're short on time, you can **[skip to Step 6](#step-6-create-vector-index-using-the-documentdb-for-vs-code-extension)** to start working with the pre-embedded data.
+> **⏭️ Skip Ahead?** Steps 1-5 are a **learning demonstration** to help you understand how embeddings work. They do **not** modify the application or database. If you're short on time, you can **[skip to Step 6](#step-6-create-vector-index-using-mongodb-atlas)** to start working with the pre-embedded data.
 
 ---
 
@@ -88,21 +94,21 @@ Let's first explore the dataset structure in the **[Jupyter Notebook](../noteboo
 
 Our dataset contains Airbnb listings with the following key fields:
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `id` | number | Unique identifier | `360` |
-| `listing_url` | string | URL to the listing | `"https://www.airbnb.com/rooms/360"` |
-| `name` | string | Property title | `"Chickadee Cottage in LoHi"` |
-| `description` | string | Full description | Text used for embeddings |
-| `neighborhood_overview` | string | Area information | `"Located in Lower Highlands..."` |
-| `amenities` | array | List of amenities | `["Wifi", "Kitchen", "TV", ...]` |
-| `property_type` | string | Type of property | `"Entire guesthouse"`, `"Apartment"`, etc. |
-| `room_type` | string | Room configuration | `"Entire home/apt"` |
-| `bedrooms` | number | Number of bedrooms | `1`, `2`, `3`, etc. |
-| `beds` | number | Number of beds | `1`, `2`, `3`, etc. |
-| `price` | number | Nightly price | `161.0` |
-| `latitude` | number | Latitude coordinate | `39.766414` |
-| `longitude` | number | Longitude coordinate | `-105.002098` |
+| Field                   | Type   | Description          | Example                                    |
+| ----------------------- | ------ | -------------------- | ------------------------------------------ |
+| `id`                    | number | Unique identifier    | `360`                                      |
+| `listing_url`           | string | URL to the listing   | `"https://www.airbnb.com/rooms/360"`       |
+| `name`                  | string | Property title       | `"Chickadee Cottage in LoHi"`              |
+| `description`           | string | Full description     | Text used for embeddings                   |
+| `neighborhood_overview` | string | Area information     | `"Located in Lower Highlands..."`          |
+| `amenities`             | array  | List of amenities    | `["Wifi", "Kitchen", "TV", ...]`           |
+| `property_type`         | string | Type of property     | `"Entire guesthouse"`, `"Apartment"`, etc. |
+| `room_type`             | string | Room configuration   | `"Entire home/apt"`                        |
+| `bedrooms`              | number | Number of bedrooms   | `1`, `2`, `3`, etc.                        |
+| `beds`                  | number | Number of beds       | `1`, `2`, `3`, etc.                        |
+| `price`                 | number | Nightly price        | `161.0`                                    |
+| `latitude`              | number | Latitude coordinate  | `39.766414`                                |
+| `longitude`             | number | Longitude coordinate | `-105.002098`                              |
 
 **💡 Key Insight:** The `description` field is what we'll convert into vector embeddings for semantic search.
 
@@ -138,7 +144,7 @@ print(f"   {sample.get('description', '')[:200]}...")
 
 ## 🛠️ Step 3: Create Embedding Generation Function
 
-We'll use OpenAI's `text-embedding-3-small` model to generate 1536-dimension vectors that capture semantic meaning.
+We'll use Azure OpenAI's `text-embedding-3-small` deployment to generate 1536-dimension vectors that capture semantic meaning.
 
 ### 💡 Understanding the Embedding
 
@@ -150,16 +156,16 @@ The notebook contains the `generate_embedding()` function:
 def generate_embedding(text):
     """
     Generate a vector embedding for the given text using OpenAI.
-    
+
     Args:
         text (str): The text to embed
-        
+
     Returns:
         list: A 1536-dimension vector representing the text
     """
     if not text or not isinstance(text, str):
         return None
-    
+
     try:
         response = openai_client.embeddings.create(
             model="text-embedding-3-small",
@@ -192,32 +198,32 @@ The notebook contains the `embed_documents()` function:
 def embed_documents(documents, limit=50):
     """
     Generate embeddings for a list of documents.
-    
+
     Args:
         documents (list): List of listing documents
         limit (int): Maximum number of documents to process
-        
+
     Returns:
         list: Documents with descriptionVector added
     """
     docs_to_process = documents[:limit]
     embedded_docs = []
-    
+
     print(f"\n🔄 Generating embeddings for {len(docs_to_process)} documents...")
-    
+
     for idx, doc in enumerate(docs_to_process):
         description = doc.get('description', '')
         embedding = generate_embedding(description)
-        
+
         if embedding:
             doc_copy = doc.copy()
             doc_copy['descriptionVector'] = embedding
             embedded_docs.append(doc_copy)
-        
+
         # Progress update every 10 documents
         if (idx + 1) % 10 == 0:
             print(f"   ✅ Processed {idx + 1}/{len(docs_to_process)} documents...")
-    
+
     print(f"\n✅ Generated embeddings for {len(embedded_docs)} documents")
     return embedded_docs
 
@@ -243,6 +249,7 @@ print(f"   Vector preview: {sample_embedded['descriptionVector'][:3]}...")
 Run the embedding cells in the notebook and verify the output:
 
 **Expected Output:**
+
 ```
 ✅ Libraries imported and environment loaded
 📊 Loaded 1000 listings from raw_data.json
@@ -267,65 +274,61 @@ Run the embedding cells in the notebook and verify the output:
 
 ---
 
-## 🛠️ Step 6: Create Vector Index Using the DocumentDB for VS Code Extension
+## 🛠️ Step 6: Create Vector Index Using MongoDB Atlas
 
 > **📍 Start Here** if you skipped the embedding demonstration (Steps 1-5).
 
-Now that your data with embeddings is loaded in DocumentDB, you need to create a **vector search index** to enable fast similarity searches.
+Now that your data with embeddings is loaded in MongoDB Atlas, you need to create a **vector search index** to enable fast similarity searches.
 
 ### Instructions:
 
-1. **Open the DocumentDB Extension** in VS Code (click the database icon in the sidebar)
+1. **Open the MongoDB for VS Code Extension** in VS Code (click the database icon in the sidebar)
 
-2. **Navigate to your Scrapbook**:
-   - Right-click on your collection `listings`
-   - Select **"New Scrapbook"**
+2. **Navigate to MongoDB Atlas Dashboard**:
+   - Go to your cluster in MongoDB Atlas
+   - Select the `db` database and `listings` collection
+   - Click on the "Atlas Search" tab
 
-3. **Run the following commands** in your scrapbook (select each block and press `Ctrl+Enter` or click "Run"):
+3. **Create a Vector Search Index**:
+   - Click "Create Index"
+   - Select "Atlas Vector Search"
+   - Use the following index definition:
 
-```javascript
-// Create vector search index on the descriptionVector field
-db.runCommand({
-    createIndexes: "listings",
-    indexes: [{
-        key: { "descriptionVector": "cosmosSearch" },
-        name: "vectorSearchIndex",
-        cosmosSearchOptions: {
-            kind: "vector-ivf",
-            numLists: 100,
-            similarity: "COS",
-            dimensions: 1536
-        }
-    }]
-})
-
-// Check all indexes on the collection
-db.listings.getIndexes()
+```json
+{
+  "fields": [
+    {
+      "type": "vector",
+      "path": "descriptionVector",
+      "numDimensions": 1536,
+      "similarity": "cosine"
+    },
+    {
+      "type": "filter",
+      "path": "price"
+    },
+    {
+      "type": "filter",
+      "path": "bedrooms"
+    }
+  ]
+}
 ```
 
 **Expected Output:**
-```json
-[
-  { "name": "_id_", "key": { "_id": 1 } },
-  { "name": "vectorSearchIndex", "key": { "descriptionVector": "cosmosSearch" } },
-]
-```
+
+After creating the index in MongoDB Atlas, you should see it listed in the "Atlas Search" tab. MongoDB will automatically build the HNSW (Hierarchical Navigable Small World) index for efficient vector similarity search.
 
 ### 💡 Understanding Index Parameters
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| `kind` | `"vector-ivf"` | Uses Inverted File Index for fast approximate search |
-| `numLists` | `100` | Number of clusters (higher = more accurate but slower) |
-| `similarity` | `"COS"` | Cosine similarity (range: 0 to 1, where 1 = identical) |
-| `dimensions` | `1536` | Must match your embedding size (OpenAI text-embedding-3-small) |
+| Parameter    | Value          | Description                                                    |
+| ------------ | -------------- | -------------------------------------------------------------- |
+| `kind`       | `"vector-ivf"` | Uses Inverted File Index for fast approximate search           |
+| `numLists`   | `100`          | Number of clusters (higher = more accurate but slower)         |
+| `similarity` | `"COS"`        | Cosine similarity (range: 0 to 1, where 1 = identical)         |
+| `dimensions` | `1536`         | Must match your embedding size (OpenAI text-embedding-3-small) |
 
-DocumentDB supports native vector search with two index types:
-
-1. **IVF (Inverted File Index)**: Fast, approximate search suitable for large datasets
-2. **HNSW (Hierarchical Navigable Small World)**: More accurate but uses more memory
-
-For this workshop, we'll use **IVF** for better performance with our dataset.
+MongoDB Atlas supports native vector search with the **HNSW (Hierarchical Navigable Small World)** algorithm, which provides fast approximate nearest neighbor search with minimal memory overhead.
 
 ## 🛠️ Step 7: Implement Semantic Search
 
@@ -337,31 +340,29 @@ For this workshop, we'll use **IVF** for better performance with our dataset.
 def search_listings(query, limit=5):
     """
     Search for listings using semantic similarity.
-    
+
     Args:
         query (str): Natural language search query
         limit (int): Maximum number of results to return
-        
+
     Returns:
         list: Matching listings with similarity scores
     """
     # Generate embedding for the query
     query_embedding = generate_embedding(query)
-    
+
     if not query_embedding:
         print("❌ Failed to generate query embedding")
         return []
-    
-    # Perform vector search using cosmosSearch
+
+    # Perform vector search using MongoDB Atlas $vectorSearch
     pipeline = [
         {
-            "$search": {
-                "cosmosSearch": {
-                    "vector": query_embedding,
-                    "path": "descriptionVector",
-                    "k": limit  # Number of nearest neighbors
-                },
-                "returnStoredSource": True
+            "$vectorSearch": {
+                "vector": query_embedding,
+                "path": "descriptionVector",
+                "k": limit,  # Number of nearest neighbors
+                "exact": False  # Use HNSW for approximate search
             }
         },
         {
@@ -375,11 +376,11 @@ def search_listings(query, limit=5):
                 "price": 1,
                 "neighborhood_overview": 1,
                 "amenities": 1,
-                "searchScore": {"$meta": "searchScore"}
+                "score": {"$meta": "vectorSearchScore"}
             }
         }
     ]
-    
+
     results = list(collection.aggregate(pipeline))
     return results
 
@@ -401,6 +402,7 @@ for idx, result in enumerate(results, 1):
 ```
 
 **Expected Output:**
+
 ```
 🔍 Search Query: 'cozy apartment with parking near downtown'
 📊 Found 5 results
@@ -438,60 +440,58 @@ for idx, result in enumerate(results, 1):
 def search_listings_with_filters(query, filters=None, limit=5):
     """
     Search for listings with semantic similarity and additional filters.
-    
+
     Args:
         query (str): Natural language search query
         filters (dict): Optional filters (bedrooms, price_max, neighborhood, amenities)
         limit (int): Maximum number of results to return
-        
+
     Returns:
         list: Matching listings with similarity scores
     """
     # Generate embedding for the query
     query_embedding = generate_embedding(query)
-    
+
     if not query_embedding:
         print("❌ Failed to generate query embedding")
         return []
-    
+
     # Build match stage for filters
     match_conditions = {}
-    
+
     if filters:
         if 'bedrooms' in filters:
             match_conditions['bedrooms'] = {"$gte": filters['bedrooms']}
-        
+
         if 'price_max' in filters:
             match_conditions['price'] = {"$lte": filters['price_max']}
-        
+
         if 'neighborhood' in filters:
             match_conditions['neighborhood_overview'] = {
                 "$regex": filters['neighborhood'],
                 "$options": "i"
             }
-        
+
         if 'amenities' in filters:
             # Amenities is a list, so we check if all required amenities are present
             match_conditions['amenities'] = {"$all": filters['amenities']}
-    
+
     # Build aggregation pipeline
     pipeline = [
         {
-            "$search": {
-                "cosmosSearch": {
-                    "vector": query_embedding,
-                    "path": "descriptionVector",
-                    "k": limit * 10  # Fetch more to account for filtering
-                },
-                "returnStoredSource": True
+            "$vectorSearch": {
+                "vector": query_embedding,
+                "path": "descriptionVector",
+                "k": limit * 10,  # Fetch more to account for filtering
+                "exact": False  # Use HNSW for approximate search
             }
         }
     ]
-    
+
     # Add filter stage if we have conditions
     if match_conditions:
         pipeline.append({"$match": match_conditions})
-    
+
     # Add projection and limit
     pipeline.extend([
         {
@@ -505,12 +505,12 @@ def search_listings_with_filters(query, filters=None, limit=5):
                 "price": 1,
                 "neighborhood_overview": 1,
                 "amenities": 1,
-                "searchScore": {"$meta": "searchScore"}
+                "score": {"$meta": "vectorSearchScore"}
             }
         },
         {"$limit": limit}
     ])
-    
+
     results = list(collection.aggregate(pipeline))
     return results
 
@@ -563,21 +563,22 @@ print("=" * 80)
 
 for query in test_queries:
     results = search_listings(query, limit=3)
-    
+
     print(f"\n🔍 Query: '{query}'")
     print(f"📊 Top 3 Results:")
-    
+
     for idx, result in enumerate(results, 1):
         print(f"\n   {idx}. {result['name']}")
         print(f"      Score: {result.get('searchScore', 0):.4f}")
         print(f"      {result.get('property_type', 'N/A')} | "
               f"{result.get('bedrooms', 'N/A')} bed | "
               f"${result.get('price', 'N/A')}/night")
-    
+
     print("\n" + "-" * 80)
 ```
 
 **💡 Observations:**
+
 - Notice how the search understands context (e.g., "romantic getaway" finds properties with ambiance descriptions)
 - "Pet-friendly" matches listings that mention pets, animals, or outdoor areas
 - "Business travel" finds properties with workspaces, desks, and good wifi
@@ -597,10 +598,11 @@ uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 You should see output like:
+
 ```
 INFO:     Uvicorn running on http://0.0.0.0:8000
 INFO:     Started reloader process
-✅ Connected to DocumentDB: db.listings
+✅ Connected to MongoDB Atlas: db.listings
 ```
 
 > 💡 **Tip:** In Codespaces, click the "Open in Browser" button when prompted, or go to the Ports tab and click the globe icon for port 8000 to access the API docs at `/docs`.
@@ -616,6 +618,7 @@ npm start
 ```
 
 You should see:
+
 ```
 Compiled successfully!
 You can now view the app in the browser.
@@ -643,19 +646,21 @@ You can now view the app in the browser.
 
 ✅ **Vector Embeddings**: How to convert text into numerical representations  
 ✅ **OpenAI Embeddings API**: Using text-embedding-3-small for semantic encoding  
-✅ **DocumentDB Vector Indexes**: Creating IVF indexes for efficient similarity search  
-✅ **Semantic Search**: Implementing cosine similarity search with cosmosSearch  
+✅ **MongoDB Atlas Vector Indexes**: Creating HNSW indexes for efficient similarity search  
+✅ **Semantic Search**: Implementing cosine similarity search with MongoDB Atlas $vectorSearch  
 ✅ **Search Filters**: Combining vector search with traditional filters  
-✅ **Query Understanding**: How embeddings capture meaning and context  
+✅ **Query Understanding**: How embeddings capture meaning and context
 
 ## 🚀 Challenge: Enhance the Search Function
 
 Now it's your turn! Enhance the `search_listings_with_filters` function with these features:
 
 ### Challenge 1: Price Range Filter (Easy)
+
 Instead of just `price_max`, support both `price_min` and `price_max`.
 
 **Requirements:**
+
 - Accept `price_min` and `price_max` in the filters dict
 - Add proper MongoDB query conditions
 - Test with: `{"price_min": 50, "price_max": 150}`
@@ -672,12 +677,15 @@ if 'price_min' in filters or 'price_max' in filters:
         price_condition['$lte'] = filters['price_max']
     match_conditions['price'] = price_condition
 ```
+
 </details>
 
 ### Challenge 2: Property Type Filter (Easy)
+
 Add support for filtering by property type (e.g., "House", "Apartment", "Condominium").
 
 **Requirements:**
+
 - Accept `property_type` in the filters dict
 - Can be a single string or a list of types
 - Test with: `{"property_type": "House"}` and `{"property_type": ["House", "Apartment"]}`
@@ -692,12 +700,15 @@ if 'property_type' in filters:
     else:
         match_conditions['property_type'] = filters['property_type']
 ```
+
 </details>
 
 ### Challenge 3: Geospatial Search (Advanced)
+
 Add support for searching within a radius of a given location.
 
 **Requirements:**
+
 - Accept `location` (coordinates as `[lng, lat]`) and `radius_km` in filters
 - Note: Our data uses separate `latitude`/`longitude` fields, so use a bounding-box approach
 - Test with Denver coordinates: `{"location": [-104.9903, 39.7392], "radius_km": 10}`
@@ -718,12 +729,15 @@ if 'location' in filters and 'radius_km' in filters:
     match_conditions['latitude'] = {"$gte": lat - lat_delta, "$lte": lat + lat_delta}
     match_conditions['longitude'] = {"$gte": lng - lng_delta, "$lte": lng + lng_delta}
 ```
+
 </details>
 
 ### Challenge 4: Hybrid Scoring (Advanced)
+
 Combine semantic similarity with price preference (favor cheaper listings).
 
 **Requirements:**
+
 - Calculate a hybrid score: `final_score = semantic_score * 0.7 + price_score * 0.3`
 - Price score: normalize price to 0-1 range (lower price = higher score)
 - Resort results by hybrid score
@@ -736,16 +750,17 @@ Combine semantic similarity with price preference (favor cheaper listings).
 for result in results:
     semantic_score = result.get('searchScore', 0)
     price = result.get('price', 100)
-    
+
     # Normalize price (assuming max price is 500)
     price_score = 1 - (min(price, 500) / 500)
-    
+
     # Calculate hybrid score
     result['hybridScore'] = semantic_score * 0.7 + price_score * 0.3
 
 # Sort by hybrid score
 results.sort(key=lambda x: x.get('hybridScore', 0), reverse=True)
 ```
+
 </details>
 
 ## 🎯 Bonus Challenge: Load the Full Dataset
@@ -759,7 +774,7 @@ full_documents = load_data_with_embeddings(
     limit=None  # Process all documents
 )
 
-# Insert into DocumentDB
+# Insert into MongoDB Atlas
 insert_documents(full_documents)
 
 # Recreate indexes
@@ -770,6 +785,7 @@ results = search_listings("luxury penthouse with city views", limit=10)
 ```
 
 **⚠️ Note:** Generating embeddings for 35K listings will:
+
 - Take approximately 10-15 minutes
 - Cost around $0.05-0.10 in OpenAI API usage
 - Require proper rate limit handling (already built into our function)
@@ -777,14 +793,14 @@ results = search_listings("luxury penthouse with city views", limit=10)
 ## 📖 Additional Resources
 
 - [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
-- [DocumentDB Vector Search Documentation](https://documentdb.io/docs/latest/vector-search/)
+- [MongoDB Atlas Vector Search Documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/)
 - [Understanding Cosine Similarity](https://en.wikipedia.org/wiki/Cosine_similarity)
 
 ## ✅ Checkpoint
 
 Before moving to Module 2, ensure you have:
 
-- [ ] Successfully connected to DocumentDB
+- [ ] Successfully connected to MongoDB Atlas
 - [ ] Generated embeddings using OpenAI's API
 - [ ] Created a vector search index (IVF)
 - [ ] Implemented basic semantic search
@@ -795,6 +811,7 @@ Before moving to Module 2, ensure you have:
 ## 🎉 What's Next?
 
 In **Module 2: RAG Pattern Implementation**, you'll learn how to:
+
 - Build a conversational AI that uses your vector search
 - Implement Retrieval-Augmented Generation (RAG) with LangChain
 - Create context-aware responses using retrieved listings
